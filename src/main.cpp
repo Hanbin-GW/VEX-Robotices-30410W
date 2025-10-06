@@ -110,8 +110,12 @@ void opcontrol() {
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
 		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-			intake.move(127);
+			intake.move_velocity(127);
+			pros::delay(10);
 		}
-		pros::delay(20);                               // Run for 20 ms then update
+		else{
+			intake.move_velocity(0);
+		}
+		pros::delay(20);// Run for 20 ms then update
 	}
 }
