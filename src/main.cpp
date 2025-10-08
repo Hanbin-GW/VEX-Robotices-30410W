@@ -32,16 +32,46 @@ pros::vision_color_code_t code1 = vision_sensor.create_color_code(RED_SIG, BLUE_
 struct GameObject{
 	int x;
   	int y;
-  	GameObject(int x_, int y_){
-		x = x_;
-		y = y_;
-	}
+  	GameObject(int x_ = 0, int y_ = 0) : x(x_), y(y_) {}
 };
 
+struct Goal : public GameObject {
+	int id;
+  	Goal(int x_, int y_, int id_) : GameObject(x_, y_), id(id_) {} 
+};
 
-std::vector<GameObject> testObj = {
-	GameObject(-1750,0),
-	GameObject(1750,0)
+struct Loader : public GameObject {
+	int id;
+	Loader(int x_, int y_, int id_ = 0) : GameObject(x_, y_), id(id_) {}
+};
+
+std::vector<Goal> GOALS = {
+  	Goal(-620, 1200, 1),
+  	Goal(-620,-1200, 2),
+  	Goal( 620, 1200, 3),
+  	Goal( 620,-1200, 4),
+  	Goal(-205,  200, 5),
+  	Goal(-205, -200, 6),
+  	Goal( 205,  200, 7),
+  	Goal( 205, -200, 8),
+};
+
+std::vector<GameObject> GameObjects = {
+	GameObject( 0,  1200),
+	GameObject( 0, -1200),
+	GameObject(-600, 600),
+	GameObject(-600,-600),
+	GameObject( 600,-600),
+	GameObject( 600, 600),
+	GameObject(-1700,  0),
+	GameObject( 1700,  0)
+};
+
+std::vector<Loader> LOADERS = {
+	Loader(-1725,  1200, 1),
+	Loader(-1725, -1200, 2),
+	Loader( 1725,  1200, 3),
+	Loader( 1725, -1200, 4),
 };
 
 /**
