@@ -8,6 +8,12 @@
 #include "pros/gps.hpp"
 #include "pros/device.hpp"
 #include "pros/misc.hpp"
+#include "pros/vision.hpp"
+#include <vector>
+
+#define VISION_PORT 12
+#define RED_SIG 1
+#define BLUE_SIG 2
 
 /**
  * A robot configration code
@@ -19,6 +25,24 @@ pros::MotorGroup rightMorots({19,20});
 
 //Intake MotorGroup
 pros::Motor intake(11);
+
+pros::Vision vision_sensor (VISION_PORT);
+pros::vision_color_code_t code1 = vision_sensor.create_color_code(RED_SIG, BLUE_SIG);
+
+struct GameObject{
+	int x;
+  	int y;
+  	GameObject(int x_, int y_){
+		x = x_;
+		y = y_;
+	}
+};
+
+
+std::vector<GameObject> testObj = {
+	GameObject(-1750,0),
+	GameObject(1750,0)
+};
 
 /**
  * A callback function for LLEMU's center button.
@@ -45,7 +69,7 @@ void on_center_button() {
 void initialize() {
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
-
+	GameObject object(0,0);
 	pros::lcd::register_btn1_cb(on_center_button);
 }
 
@@ -78,7 +102,9 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
+void autonomous() {
+
+}
 
 /**
  * Runs the operator control code. This function will be started in its own task
