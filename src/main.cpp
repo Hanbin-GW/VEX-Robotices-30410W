@@ -9,25 +9,54 @@
 #include "pros/device.hpp"
 #include "pros/misc.hpp"
 #include "pros/vision.hpp"
+#include "pros/llemu.hpp"
+#include "pros/gps.hpp"
+#include "lemlib/api.hpp"
 #include <vector>
 
 #define VISION_PORT 12
-#define RED_SIG 1
-#define BLUE_SIG 2
+#define RED_SIG_ID  1     // SIG_1
+#define BLUE_SIG_ID 2 	  // SIG_2
+#define MIN_AREA    500
 
+pros::vision_signature_s_t RED_SIG = pros::Vision::signature_from_utility(
+  RED_SIG_ID,
+  /* uMin */ 32717, /* uMax */ 32819, /* uMean */ 32768,
+  /* vMin */ -51,   /* vMax */ 51,    /* vMean */ 0,
+  /* range */ 2.5,  /* type */ 0
+);
+
+pros::vision_signature_s_t BLUE_SIG = pros::Vision::signature_from_utility(
+  BLUE_SIG_ID,
+  /* uMin */ -51,   /* uMax */ 51,    /* uMean */ 0,
+  /* vMin */ 32717, /* vMax */ 32819, /* vMean */ 32768,
+  /* range */ 2.5,  /* type */ 0
+);
 /**
  * A robot configration code
  */
 
+pros::Controller controller(pros::E_CONTROLLER_MASTER);
+
 //Drivetrain MortorGroup
 pros::MotorGroup leftMotors({1,2});
-pros::MotorGroup rightMorots({19,20});
+pros::MotorGroup rightMotors({19,20});
+lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
+                              &rightMotors, // right motor group
+                              10, // 10 inch track width
+                              lemlib::Omniwheel::NEW_4, // using new 4" omnis
+                              360, // drivetrain rpm is 360
+                              2 // horizontal drift is 2. If we had traction wheels, it would have been 8
+);
 
 //Intake MotorGroup
 pros::Motor intake(11);
 
 pros::Vision vision_sensor (VISION_PORT);
-pros::vision_color_code_t code1 = vision_sensor.create_color_code(RED_SIG, BLUE_SIG);
+pros::Gps gps(12);
+
+
+lemlib::Chassis chassis;
 
 struct GameObject{
 	int x;
@@ -74,6 +103,21 @@ std::vector<Loader> LOADERS = {
 	Loader( 1725, -1200, 4),
 };
 
+static inline const char* detect_color_once() {
+  // 0 = 가장 큰 객체
+  pros::vision_object_s_t r = vision_sensor.get_by_sig(0, RED_SIG_ID);
+  pros::vision_object_s_t b = vision_sensor.get_by_sig(0, BLUE_SIG_ID);
+
+  int r_area = (r.signature == RED_SIG_ID) ? r.width * r.height : 0;
+  int b_area = (b.signature == BLUE_SIG_ID) ? b.width * b.height : 0;
+
+  if (r_area < MIN_AREA) r_area = 0;
+  if (b_area < MIN_AREA) b_area = 0;
+
+  if (r_area == 0 && b_area == 0) return "NONE";
+  return (r_area > b_area) ? "RED" : "BLUE";
+}
+
 /**
  * A callback function for LLEMU's center button.
  *
@@ -101,6 +145,12 @@ void initialize() {
 	pros::lcd::set_text(1, "Hello PROS User!");
 	GameObject object(0,0);
 	pros::lcd::register_btn1_cb(on_center_button);
+	chassis.calibrate();
+	std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
+	pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
+	//Vision Sensor Initialize
+  	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
+  	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
 }
 
 /**
@@ -133,7 +183,7 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-
+	
 }
 
 /**
@@ -150,7 +200,7 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-	pros::Controller master(pros::E_CONTROLLER_MASTER);
+	// pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup left_mg({-1, -2});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup right_mg({-19, -20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 
@@ -161,17 +211,21 @@ void opcontrol() {
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
 
 		// Arcade control scheme
-		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
-		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
+		int dir = controller.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
+		int turn = controller.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
-		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
 			intake.move_velocity(127);
 			pros::delay(10);
 		}
 		else{
 			intake.move_velocity(0);
 		}
+		const char* c = detect_color_once();
+		pros::lcd::print(0, "Detect: %s", c);
+		//pros::delay(100);
+
 		pros::delay(20);// Run for 20 ms then update
 	}
 }
