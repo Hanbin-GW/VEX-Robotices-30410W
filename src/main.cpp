@@ -263,7 +263,18 @@ void autonomous() {
 	intake.move_velocity(127);
 	pros::delay(5000);
 	intake.move_velocity(0);
-	//로더 구현 필요
+	chassis.moveToPoint(0,0,1000);
+	chassis.turnToHeading(-20,2000);
+	move_forward_inches(15.0 / 2.54);
+	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
+	chassis.turnToHeading(-45,1000);
+	move_forward_inches(12.5 / 2.54);
+	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
+
+	move_forward_inches(-10.0 / 2.54);
+	//로더에서 공 가져오는 함수 구현 필요
+	move_forward_inches(10.0 / 2.54);
+	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
 }
 
 /**
