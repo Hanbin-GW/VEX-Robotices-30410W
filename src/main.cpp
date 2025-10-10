@@ -12,6 +12,8 @@
 #include "pros/llemu.hpp"
 #include "pros/gps.hpp"
 #include "lemlib/api.hpp"
+#include "lemlib/chassis/odom.hpp"
+#include "lemlib/chassis/chassis.hpp"
 #include <vector>
 
 #define VISION_PORT 12
@@ -41,6 +43,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 //Drivetrain MortorGroup
 pros::MotorGroup leftMotors({1,2});
 pros::MotorGroup rightMotors({19,20});
+
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
                               10, // 10 inch track width
@@ -49,15 +52,41 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               2 // horizontal drift is 2. If we had traction wheels, it would have been 8
 );
 
+lemlib::ControllerSettings linearController(
+    10, 0, 3,   // kP, kI, kD
+    0,          // anti-windup
+    0, 100,     // smallError,  smallErrorTimeout(ms)
+    3, 500,     // largeError,  largeErrorTimeout(ms)
+    100         // slew rate
+);
+
+lemlib::ControllerSettings angularController(
+    2, 0, 10,
+    0,
+    0, 100,
+    3, 500,
+    100
+);
+
 //Intake MotorGroup
 pros::Motor intake(11);
 
 pros::Vision vision_sensor (VISION_PORT);
 pros::Gps gps(12);
+pros::Imu imu(13); // 비어있는 스마트포트 사용
 
+lemlib::OdomSensors sensors(
+    nullptr, nullptr,
+    nullptr, nullptr,
+    &imu
+);
 
-lemlib::Chassis chassis;
-
+lemlib::Chassis chassis(
+    drivetrain,
+    linearController,
+    angularController,
+    sensors
+);
 struct GameObject{
 	int x;
   	int y;
@@ -102,6 +131,17 @@ std::vector<Loader> LOADERS = {
 	Loader( 1725,  1200, 3),
 	Loader( 1725, -1200, 4),
 };
+void RotateMotor() {
+    intake.move_relative(360, 100); // 100은 속도(RPM)
+
+    //모터가 다 돌아갈 때 까지 기다리기
+    while (!((intake.get_position() >= 358) && (intake.get_position() <= 362))) {
+        pros::delay(10);
+    }
+    
+    intake.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    intake.brake();
+}
 
 static inline const char* detect_color_once() {
   // 0 = 가장 큰 객체
@@ -117,6 +157,29 @@ static inline const char* detect_color_once() {
   if (r_area == 0 && b_area == 0) return "NONE";
   return (r_area > b_area) ? "RED" : "BLUE";
 }
+// chassis: 전역 혹은 전달받은 LemLib 섀시 객체라고 가정
+void move_forward_inches(double inches, int timeout_ms = 2000) {
+    auto p = chassis.getPose();              // x,y[inch], theta[deg]
+    double rad = p.theta * M_PI / 180.0;     // deg → rad
+    double tx = p.x + inches * std::cos(rad);
+    double ty = p.y + inches * std::sin(rad);
+    chassis.moveToPoint(tx, ty, timeout_ms); // 그 지점까지 직진
+}
+
+void gps_fusion_task() {
+    while (true) {
+        // 구버전 PROS API
+        double x_in = gps.get_position_x() * 39.37;
+        double y_in = gps.get_position_y() * 39.37;
+        double heading_deg = gps.get_heading();
+
+        // LemLib 내부 좌표 보정
+        chassis.setPose(x_in, y_in, heading_deg, false);
+
+        pros::delay(50); // 20Hz 주기
+    }
+}
+
 
 /**
  * A callback function for LLEMU's center button.
@@ -145,12 +208,13 @@ void initialize() {
 	pros::lcd::set_text(1, "Hello PROS User!");
 	GameObject object(0,0);
 	pros::lcd::register_btn1_cb(on_center_button);
+	imu.reset();
 	chassis.calibrate();
-	std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
-	pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
 	//Vision Sensor Initialize
   	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
   	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
+
+    pros::Task gpsTask(gps_fusion_task);
 }
 
 /**
@@ -183,7 +247,23 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-	
+	std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
+	pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
+	chassis.setPose(0, 0, 0);
+	//chassis.turnToHeading(20,1000);
+	chassis.moveToPose(3.94, 0, 45, 3000);
+	chassis.turnToHeading(10,1000);
+	move_forward_inches(10.0 / 2.54);
+	intake.move_velocity(127);
+	pros::delay(5000);
+	intake.move_velocity(0);
+
+	chassis.turnToHeading(30,2000);
+	move_forward_inches(10.0 / 2.54);
+	intake.move_velocity(127);
+	pros::delay(5000);
+	intake.move_velocity(0);
+	//로더 구현 필요
 }
 
 /**
