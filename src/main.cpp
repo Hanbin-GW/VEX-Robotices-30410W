@@ -16,7 +16,7 @@
 #include "lemlib/chassis/chassis.hpp"
 #include <vector>
 
-#define VISION_PORT 12
+#define VISION_PORT 14
 #define RED_SIG_ID  1     // SIG_1
 #define BLUE_SIG_ID 2 	  // SIG_2
 #define MIN_AREA    500
@@ -40,9 +40,9 @@ pros::vision_signature_s_t BLUE_SIG = pros::Vision::signature_from_utility(
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
-//Drivetrain MortorGroup
+//Drivetrain MotorGroup
 pros::MotorGroup leftMotors({1,2});
-pros::MotorGroup rightMotors({19,20});
+pros::MotorGroup rightMotors({-19,-20});
 
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
@@ -69,10 +69,12 @@ lemlib::ControllerSettings angularController(
 );
 
 //Intake MotorGroup
-pros::Motor intake(11);
+pros::Motor intake_1(18);
+pros::Motor intake_2(17);
+pros::Motor outtake(3);
 
 pros::Vision vision_sensor (VISION_PORT);
-pros::Gps gps(12);
+//pros::Gps gps(12);
 pros::Imu imu(13); // 비어있는 스마트포트 사용
 
 lemlib::OdomSensors sensors(
@@ -132,15 +134,15 @@ std::vector<Loader> LOADERS = {
 	Loader( 1725, -1200, 4),
 };
 void RotateMotor() {
-	intake.move_relative(360, 100); // 100은 속도(RPM)
+	intake_1.move_relative(360, 100); // 100은 속도(RPM)
 
 	//모터가 다 돌아갈 때 까지 기다리기
-	while (!((intake.get_position() >= 358) && (intake.get_position() <= 362))) {
+	while (!((intake_1.get_position() >= 358) && (intake_1.get_position() <= 362))) {
 		pros::delay(10);
 	}
 	
-	intake.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	intake.brake();
+	intake_1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	intake_1.brake();
 }
 
 static inline const char* detect_color_once() {
@@ -166,7 +168,7 @@ void move_forward_inches(double inches, int timeout_ms = 2000) {
     chassis.moveToPoint(tx, ty, timeout_ms); // 그 지점까지 직진
 }
 
-void gps_fusion_task() {
+/*void gps_fusion_task() {
 	while (true) {
 		// 구버전 PROS API
 		double x_in = gps.get_position_x() * 39.37;
@@ -178,7 +180,7 @@ void gps_fusion_task() {
 
 		pros::delay(50); // 20Hz 주기
 	}
-}
+}*/
 
 
 /**
@@ -213,7 +215,7 @@ void initialize() {
 	//Vision Sensor Initialize
   	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
   	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
-	pros::Task gpsTask(gps_fusion_task);
+	//pros::Task gpsTask(gps_fusion_task);
 }
 
 /**
@@ -246,22 +248,22 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-	std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
-	pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
+	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
+	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
 	chassis.setPose(0, 0, 0);
 	//chassis.turnToHeading(20,1000);
 	chassis.moveToPose(3.94, 0, 45, 3000);
 	chassis.turnToHeading(10,1000);
 	move_forward_inches(10.0 / 2.54);
-	intake.move_velocity(127);
+	intake_1.move_velocity(127);
 	pros::delay(5000);
-	intake.move_velocity(0);
+	intake_1.move_velocity(0);
 
 	chassis.turnToHeading(30,2000);
 	move_forward_inches(10.0 / 2.54);
-	intake.move_velocity(127);
+	intake_1.move_velocity(127);
 	pros::delay(5000);
-	intake.move_velocity(0);
+	intake_1.move_velocity(0);
 	chassis.moveToPoint(0,0,1000);
 	chassis.turnToHeading(-20,2000);
 	move_forward_inches(15.0 / 2.54);
@@ -306,11 +308,11 @@ void opcontrol() {
 		leftMotors.move(dir - turn);                      // Sets left motor voltage
 		rightMotors.move(dir + turn);                     // Sets right motor voltage
 		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-			intake.move_velocity(127);
+			intake_1.move_velocity(127);
 			// pros::delay(10);
 		}
 		else{
-			intake.move_velocity(0);
+			intake_1.move_velocity(0);
 		}
 		const char* c = detect_color_once();
 		pros::lcd::print(0, "Detect: %s", c);
