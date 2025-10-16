@@ -132,30 +132,30 @@ std::vector<Loader> LOADERS = {
 	Loader( 1725, -1200, 4),
 };
 void RotateMotor() {
-    intake.move_relative(360, 100); // 100은 속도(RPM)
+	intake.move_relative(360, 100); // 100은 속도(RPM)
 
-    //모터가 다 돌아갈 때 까지 기다리기
-    while (!((intake.get_position() >= 358) && (intake.get_position() <= 362))) {
-        pros::delay(10);
-    }
-    
-    intake.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    intake.brake();
+	//모터가 다 돌아갈 때 까지 기다리기
+	while (!((intake.get_position() >= 358) && (intake.get_position() <= 362))) {
+		pros::delay(10);
+	}
+	
+	intake.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	intake.brake();
 }
 
 static inline const char* detect_color_once() {
-  // 0 = 가장 큰 객체
-  pros::vision_object_s_t r = vision_sensor.get_by_sig(0, RED_SIG_ID);
-  pros::vision_object_s_t b = vision_sensor.get_by_sig(0, BLUE_SIG_ID);
+  	// 0 = 가장 큰 객체
+	pros::vision_object_s_t r = vision_sensor.get_by_sig(0, RED_SIG_ID);
+	pros::vision_object_s_t b = vision_sensor.get_by_sig(0, BLUE_SIG_ID);
 
-  int r_area = (r.signature == RED_SIG_ID) ? r.width * r.height : 0;
-  int b_area = (b.signature == BLUE_SIG_ID) ? b.width * b.height : 0;
+	int r_area = (r.signature == RED_SIG_ID) ? r.width * r.height : 0;
+	int b_area = (b.signature == BLUE_SIG_ID) ? b.width * b.height : 0;
 
-  if (r_area < MIN_AREA) r_area = 0;
-  if (b_area < MIN_AREA) b_area = 0;
+	if (r_area < MIN_AREA) r_area = 0;
+	if (b_area < MIN_AREA) b_area = 0;
 
-  if (r_area == 0 && b_area == 0) return "NONE";
-  return (r_area > b_area) ? "RED" : "BLUE";
+	if (r_area == 0 && b_area == 0) return "NONE";
+  	return (r_area > b_area) ? "RED" : "BLUE";
 }
 // chassis: 전역 혹은 전달받은 LemLib 섀시 객체라고 가정
 void move_forward_inches(double inches, int timeout_ms = 2000) {
@@ -167,17 +167,17 @@ void move_forward_inches(double inches, int timeout_ms = 2000) {
 }
 
 void gps_fusion_task() {
-    while (true) {
-        // 구버전 PROS API
-        double x_in = gps.get_position_x() * 39.37;
-        double y_in = gps.get_position_y() * 39.37;
-        double heading_deg = gps.get_heading();
+	while (true) {
+		// 구버전 PROS API
+		double x_in = gps.get_position_x() * 39.37;
+		double y_in = gps.get_position_y() * 39.37;
+		double heading_deg = gps.get_heading();
 
-        // LemLib 내부 좌표 보정
-        chassis.setPose(x_in, y_in, heading_deg, false);
+		// LemLib 내부 좌표 보정
+		chassis.setPose(x_in, y_in, heading_deg, false);
 
-        pros::delay(50); // 20Hz 주기
-    }
+		pros::delay(50); // 20Hz 주기
+	}
 }
 
 
@@ -213,8 +213,7 @@ void initialize() {
 	//Vision Sensor Initialize
   	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
   	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
-
-    pros::Task gpsTask(gps_fusion_task);
+	pros::Task gpsTask(gps_fusion_task);
 }
 
 /**
@@ -292,8 +291,8 @@ void autonomous() {
  */
 void opcontrol() {
 	// pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({-1, -2});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup right_mg({-19, -20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	// pros::MotorGroup left_mg({-1, -2});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	// pros::MotorGroup right_mg({-19, -20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 
 
 	while (true) {
@@ -304,11 +303,11 @@ void opcontrol() {
 		// Arcade control scheme
 		int dir = controller.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = controller.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
-		left_mg.move(dir - turn);                      // Sets left motor voltage
-		right_mg.move(dir + turn);                     // Sets right motor voltage
+		leftMotors.move(dir - turn);                      // Sets left motor voltage
+		rightMotors.move(dir + turn);                     // Sets right motor voltage
 		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
 			intake.move_velocity(127);
-			pros::delay(10);
+			// pros::delay(10);
 		}
 		else{
 			intake.move_velocity(0);
