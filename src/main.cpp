@@ -41,8 +41,8 @@ pros::vision_signature_s_t BLUE_SIG = pros::Vision::signature_from_utility(
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 //Drivetrain MotorGroup
-pros::MotorGroup leftMotors({1,2});
-pros::MotorGroup rightMotors({-19,-20});
+pros::MotorGroup leftMotors({-1,-2});
+pros::MotorGroup rightMotors({19,20});
 
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
@@ -71,6 +71,9 @@ lemlib::ControllerSettings angularController(
 //Intake MotorGroup
 pros::Motor intake_1(18);
 pros::Motor intake_2(17);
+
+pros::MotorGroup intake({18,17});
+
 pros::Motor outtake(3);
 
 pros::Vision vision_sensor (VISION_PORT);
@@ -216,6 +219,10 @@ void initialize() {
   	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
   	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
 	//pros::Task gpsTask(gps_fusion_task);
+
+	// Drivetrain motor brake mode
+	leftMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
+	rightMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 }
 
 /**
@@ -305,17 +312,25 @@ void opcontrol() {
 		// Arcade control scheme
 		int dir = controller.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = controller.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
-		leftMotors.move(dir - turn);                      // Sets left motor voltage
-		rightMotors.move(dir + turn);                     // Sets right motor voltage
-		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-			intake_1.move_velocity(127);
-			// pros::delay(10);
+		bool in  = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+		bool out = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+		leftMotors.move(dir + turn);                      // Sets left motor voltage
+		rightMotors.move(dir - turn);                     // Sets right motor voltage
+		if (in && !out) {
+			// 전압 제어: 즉각 세게 도는지 확인하기 좋음
+			intake.move(127);           // [-127..127] 전압
+			// 또는 속도 제어: 기어셋에 맞춰 rpm 값 사용
+			// intake.move_velocity(300); // 300rpm (기어셋이 600rpm이면 절반 속도)
+		} else if (out && !in) {
+			intake.move(-127);
+			// intake.move_velocity(-300);
+		} else {
+			intake.brake(); // 또는 intake.move(0);
 		}
-		else{
-			intake_1.move_velocity(0);
-		}
-		const char* c = detect_color_once();
-		pros::lcd::print(0, "Detect: %s", c);
+
+
+		//const char* c = detect_color_once();
+		//pros::lcd::print(0, "Detect: %s", c);
 		//pros::delay(100);
 
 		pros::delay(20);// Run for 20 ms then update
