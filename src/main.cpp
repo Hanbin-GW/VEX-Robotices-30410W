@@ -319,13 +319,16 @@ void opcontrol() {
 		if (in && !out) {
 			// 전압 제어: 즉각 세게 도는지 확인하기 좋음
 			intake.move(127);           // [-127..127] 전압
+			outtake.move(-127);
 			// 또는 속도 제어: 기어셋에 맞춰 rpm 값 사용
 			// intake.move_velocity(300); // 300rpm (기어셋이 600rpm이면 절반 속도)
 		} else if (out && !in) {
 			intake.move(-127);
+			outtake.move(127);
 			// intake.move_velocity(-300);
 		} else {
 			intake.brake(); // 또는 intake.move(0);
+			outtake.brake();
 		}
 
 
