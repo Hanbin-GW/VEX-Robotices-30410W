@@ -72,18 +72,20 @@ lemlib::ControllerSettings angularController(
 pros::Motor intake_1(18);
 pros::Motor intake_2(17);
 
-pros::MotorGroup intake({18,17});
+pros::MotorGroup intake({18,-17});
 
 pros::Motor outtake(3);
 
 pros::Vision vision_sensor (VISION_PORT);
-//pros::Gps gps(12);
+pros::Gps gps(12);
 pros::Imu imu(13); // 비어있는 스마트포트 사용
 
 lemlib::OdomSensors sensors(
     nullptr, nullptr,
     nullptr, nullptr,
     &imu
+
+    //rotation sensor
 );
 
 lemlib::Chassis chassis(
@@ -137,15 +139,15 @@ std::vector<Loader> LOADERS = {
 	Loader( 1725, -1200, 4),
 };
 void RotateMotor() {
-	intake_1.move_relative(360, 100); // 100은 속도(RPM)
+	intake.move(127);
 
 	//모터가 다 돌아갈 때 까지 기다리기
-	while (!((intake_1.get_position() >= 358) && (intake_1.get_position() <= 362))) {
+	while (!((intake.get_position() >= 358) && (intake.get_position() <= 362))) {
 		pros::delay(10);
 	}
 	
-	intake_1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	intake_1.brake();
+	intake.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	intake.brake();
 }
 
 static inline const char* detect_color_once() {
@@ -171,7 +173,7 @@ void move_forward_inches(double inches, int timeout_ms = 2000) {
     chassis.moveToPoint(tx, ty, timeout_ms); // 그 지점까지 직진
 }
 
-/*void gps_fusion_task() {
+void gps_fusion_task() {
 	while (true) {
 		// 구버전 PROS API
 		double x_in = gps.get_position_x() * 39.37;
@@ -183,7 +185,7 @@ void move_forward_inches(double inches, int timeout_ms = 2000) {
 
 		pros::delay(50); // 20Hz 주기
 	}
-}*/
+}
 
 
 /**
@@ -258,7 +260,7 @@ void autonomous() {
 	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
 	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
 	chassis.setPose(0, 0, 0);
-	//chassis.turnToHeading(20,1000);
+	chassis.turnToHeading(20,1000);
 	chassis.moveToPose(3.94, 0, 45, 3000);
 	chassis.turnToHeading(10,1000);
 	move_forward_inches(10.0 / 2.54);
@@ -319,12 +321,14 @@ void opcontrol() {
 		if (in && !out) {
 			// 전압 제어: 즉각 세게 도는지 확인하기 좋음
 			intake.move(127);           // [-127..127] 전압
-			outtake.move(-127);
+			//outtake.move(127);
+			outtake.move_voltage(12000);
 			// 또는 속도 제어: 기어셋에 맞춰 rpm 값 사용
 			// intake.move_velocity(300); // 300rpm (기어셋이 600rpm이면 절반 속도)
 		} else if (out && !in) {
 			intake.move(-127);
-			outtake.move(127);
+			//outtake.move(-127);
+			outtake.move_voltage(-12000);
 			// intake.move_velocity(-300);
 		} else {
 			intake.brake(); // 또는 intake.move(0);
