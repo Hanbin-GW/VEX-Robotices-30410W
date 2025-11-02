@@ -46,9 +46,9 @@ pros::MotorGroup rightMotors({19,20});
 
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
-                              10, // 10 inch track width
-                              lemlib::Omniwheel::NEW_4, // using new 4" omnis
-                              360, // drivetrain rpm is 360
+                              26, // 26 inch track width
+                              lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
+                              500, // drivetrain rpm is 500
                               2 // horizontal drift is 2. If we had traction wheels, it would have been 8
 );
 
@@ -79,13 +79,20 @@ pros::Motor outtake(3);
 pros::Vision vision_sensor (VISION_PORT);
 pros::Gps gps(12);
 pros::Imu imu(13); // 비어있는 스마트포트 사용
+pros::Rotation vertical_rotation_sensor(14);
+
+lemlib::TrackingWheel vertical(
+    &vertical_rotation_sensor,
+    lemlib::Omniwheel::NEW_275,
+    0.0 // tracking center에서의 오프셋 (오른쪽이 양수)
+);
 
 lemlib::OdomSensors sensors(
-    nullptr, nullptr,
-    nullptr, nullptr,
+    &vertical, 
+    nullptr,
+    nullptr,  
+    nullptr,
     &imu
-
-    //rotation sensor
 );
 
 lemlib::Chassis chassis(
@@ -257,33 +264,39 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
+	chassis.turnToHeading(60, 1500);
+	pros::delay(50);
+	// chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
 	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
 	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
-	chassis.setPose(0, 0, 0);
-	chassis.turnToHeading(20,1000);
-	chassis.moveToPose(3.94, 0, 45, 3000);
-	chassis.turnToHeading(10,1000);
-	move_forward_inches(10.0 / 2.54);
-	intake_1.move_velocity(127);
-	pros::delay(5000);
-	intake_1.move_velocity(0);
+	// chassis.setPose(0, 0, 0);
+	// chassis.turnToHeading(60,500);
+	// chassis.moveToPose(600, -600, 45, 3000);
+	// intake_1.move_velocity(127);
+	// pros::delay(1000);
+	// chassis.turnToHeading(10,1000);
+	// // move_forward_inches(10.0 / 2.54);
+	// chassis.moveToPose(205, -200, 45, 3000);
+	// intake_1.move_velocity(127);
+	// pros::delay(1000);
+	// intake_1.move_velocity(0);
 
-	chassis.turnToHeading(30,2000);
-	move_forward_inches(10.0 / 2.54);
-	intake_1.move_velocity(127);
-	pros::delay(5000);
-	intake_1.move_velocity(0);
-	chassis.moveToPoint(0,0,1000);
-	chassis.turnToHeading(-20,2000);
-	move_forward_inches(15.0 / 2.54);
-	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
-	chassis.turnToHeading(-45,1000);
-	move_forward_inches(12.5 / 2.54);
-	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
+	// chassis.turnToHeading(30,2000);
+	// move_forward_inches(10.0 / 2.54);
+	// intake_1.move_velocity(127);
+	// pros::delay(5000);
+	// intake_1.move_velocity(0);
+	// chassis.moveToPoint(0,0,1000);
+	// chassis.turnToHeading(-20,2000);
+	// move_forward_inches(15.0 / 2.54);
+	// //빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
+	// chassis.turnToHeading(-45,1000);
+	// move_forward_inches(12.5 / 2.54);
+	// //빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
 
-	move_forward_inches(-10.0 / 2.54);
-	//로더에서 공 가져오는 함수 구현 필요
-	move_forward_inches(10.0 / 2.54);
+	// move_forward_inches(-10.0 / 2.54);
+	// //로더에서 공 가져오는 함수 구현 필요
+	// move_forward_inches(10.0 / 2.54);
 	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
 }
 
@@ -315,6 +328,7 @@ void opcontrol() {
 		int dir = controller.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = controller.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		bool in  = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+		bool outtake_pressed  = controller.get_digital(pros::E_CONTROLLER_DIGITAL_X);
 		bool out = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
 		leftMotors.move(dir + turn);                      // Sets left motor voltage
 		rightMotors.move(dir - turn);                     // Sets right motor voltage
@@ -330,7 +344,15 @@ void opcontrol() {
 			//outtake.move(-127);
 			outtake.move_voltage(-12000);
 			// intake.move_velocity(-300);
-		} else {
+		}
+		else if( outtake_pressed ) {
+			intake.brake(); // 또는 intake.move(0);
+			outtake.move_voltage(-12000);
+		}
+		else if( !outtake_pressed ) {
+			outtake.brake(); // 또는 intake.move(0);
+		}
+		else {
 			intake.brake(); // 또는 intake.move(0);
 			outtake.brake();
 		}
