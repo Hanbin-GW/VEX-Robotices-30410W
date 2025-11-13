@@ -9,6 +9,7 @@
 #include "pros/device.hpp"
 #include "pros/misc.hpp"
 #include "pros/vision.hpp"
+#include "pros/ai_vision.hpp"
 #include "pros/llemu.hpp"
 #include "pros/gps.hpp"
 #include "lemlib/api.hpp"
@@ -79,8 +80,8 @@ pros::Motor outtake(3);
 pros::Vision vision_sensor (VISION_PORT);
 pros::Gps gps(12);
 pros::Imu imu(13); // 비어있는 스마트포트 사용
-pros::Rotation vertical_rotation_sensor(14);
-
+pros::Rotation vertical_rotation_sensor(15);
+pros::Rotation horizontal_rotation_sensor(16);
 lemlib::TrackingWheel vertical(
     &vertical_rotation_sensor,
     lemlib::Omniwheel::NEW_275,
@@ -145,6 +146,33 @@ std::vector<Loader> LOADERS = {
 	Loader( 1725,  1200, 3),
 	Loader( 1725, -1200, 4),
 };
+
+void move_forward(double inches, int speed = 100) {
+    const double wheel_diameter = 4.0;
+    const double PI = 3.1415926535;
+    double wheel_circumference = wheel_diameter * PI;
+    double rotations = inches / wheel_circumference;
+    double degrees = rotations * 360.0;
+
+    leftMotors.tare_position();
+    rightMotors.tare_position();
+
+    leftMotors.move_relative(degrees, speed);
+    rightMotors.move_relative(degrees, speed);
+
+    pros::delay(1000);
+}
+
+void turn_right(double degrees, int speed = 100) {
+    double turn_ratio = 6.5; // Track width proportional value (in inches)
+    double distance = (turn_ratio * 3.1415 * degrees) / 360.0;
+
+    leftMotors.move_relative(distance * 360 / (4.0 * 3.1415), speed);
+    rightMotors.move_relative(-distance * 360 / (4.0 * 3.1415), speed);
+
+    pros::delay(800);
+}
+
 void RotateMotor() {
 	intake.move(127);
 
@@ -264,9 +292,14 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-	chassis.turnToHeading(60, 1500);
+	//chassis.turnToHeading(60, 1500);
 	pros::delay(50);
-	// chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
+	//move_forward(14,100);
+	//chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
+	chassis.moveToPoint(400, 400, 1500);
+	pros::delay(50);
+	chassis.moveToPoint(500, 0, 1500);
+	//chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
 	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
 	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
 	// chassis.setPose(0, 0, 0);
@@ -328,33 +361,42 @@ void opcontrol() {
 		int dir = controller.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = controller.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		bool in  = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
-		bool outtake_pressed  = controller.get_digital(pros::E_CONTROLLER_DIGITAL_X);
 		bool out = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+		bool Y   = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+		bool A   = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
 		leftMotors.move(dir + turn);                      // Sets left motor voltage
 		rightMotors.move(dir - turn);                     // Sets right motor voltage
 		if (in && !out) {
 			// 전압 제어: 즉각 세게 도는지 확인하기 좋음
 			intake.move(127);           // [-127..127] 전압
-			//outtake.move(127);
-			outtake.move_voltage(12000);
+			outtake.move(127);
+			//outtake.move_voltage(12000);
 			// 또는 속도 제어: 기어셋에 맞춰 rpm 값 사용
 			// intake.move_velocity(300); // 300rpm (기어셋이 600rpm이면 절반 속도)
 		} else if (out && !in) {
 			intake.move(-127);
-			//outtake.move(-127);
-			outtake.move_voltage(-12000);
+			outtake.move(-127);
+			//outtake.move_voltage(-12000);
 			// intake.move_velocity(-300);
-		}
-		else if( outtake_pressed ) {
-			intake.brake(); // 또는 intake.move(0);
-			outtake.move_voltage(-12000);
-		}
-		else if( !outtake_pressed ) {
-			outtake.brake(); // 또는 intake.move(0);
 		}
 		else {
 			intake.brake(); // 또는 intake.move(0);
+			//intake_2.brake();
+			//intake_1.brake();
 			outtake.brake();
+		}
+
+		if (Y) {
+		// 필요: 아래 B안 참고해서 모터 중복 제어 피하기
+			intake_2.move_voltage(12000);
+		}
+		else if (A)
+		{
+			intake_2.move_voltage(-12000);
+		}
+		 
+		else {
+			// intake_2.move(0);
 		}
 
 
