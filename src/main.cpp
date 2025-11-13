@@ -84,8 +84,14 @@ pros::Rotation vertical_rotation_sensor(15);
 pros::Rotation horizontal_rotation_sensor(16);
 lemlib::TrackingWheel vertical(
     &vertical_rotation_sensor,
-    lemlib::Omniwheel::NEW_275,
+    lemlib::Omniwheel::NEW_2,
     0.0 // tracking center에서의 오프셋 (오른쪽이 양수)
+);
+
+lemlib::TrackingWheel horizontal(
+    &horizontal_rotation_sensor,
+    lemlib::Omniwheel::NEW_2,
+    0.0 // tracking center에서의 오프셋 (앞쪽이 양수)
 );
 
 lemlib::OdomSensors sensors(
@@ -296,9 +302,19 @@ void autonomous() {
 	pros::delay(50);
 	//move_forward(14,100);
 	//chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
-	chassis.moveToPoint(400, 400, 1500);
+	chassis.moveToPoint(0, 400, 1500);
+	intake.move_velocity(127);
+	pros::delay(800);
+	intake.move_velocity(0);
 	pros::delay(50);
-	chassis.moveToPoint(500, 0, 1500);
+	chassis.moveToPoint(100, 350, 1500);
+	pros::delay(50);
+	intake.move_velocity(-127);
+	pros::delay(800);
+	intake.move_velocity(0);
+	pros::delay(50);
+	chassis.moveToPoint(0, 0, 1500);
+	pros::delay(50);
 	//chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
 	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
 	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
