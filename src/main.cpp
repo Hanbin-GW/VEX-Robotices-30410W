@@ -54,7 +54,8 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
 );
 
 lemlib::ControllerSettings linearController(
-    10, 0, 3,   // kP, kI, kD
+//      0, 10, 10,   // kP, kI, kD
+    3, 0.5, 6,   // kP, kI, kD
     0,          // anti-windup
     0, 100,     // smallError,  smallErrorTimeout(ms)
     3, 500,     // largeError,  largeErrorTimeout(ms)
@@ -62,7 +63,8 @@ lemlib::ControllerSettings linearController(
 );
 
 lemlib::ControllerSettings angularController(
-    2, 0, 10,
+//     2, 0, 10,
+    0, 0, 0,
     0,
     0, 100,
     3, 500,
@@ -95,7 +97,7 @@ lemlib::TrackingWheel horizontal(
 );
 
 lemlib::OdomSensors sensors(
-    &vertical, 
+    nullptr, 
     nullptr,
     nullptr,  
     nullptr,
@@ -258,6 +260,7 @@ void initialize() {
 	pros::lcd::register_btn1_cb(on_center_button);
 	imu.reset();
 	chassis.calibrate();
+	chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
 	//Vision Sensor Initialize
   	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
   	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
@@ -300,9 +303,11 @@ void competition_initialize() {}
 void autonomous() {
 	//chassis.turnToHeading(60, 1500);
 	pros::delay(50);
+	chassis.moveToPoint(0, 1000, 1200);
+	//chassis.moveToPose(800, 0, 0, 500);
 	//move_forward(14,100);
 	//chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
-	chassis.moveToPoint(0, 400, 1500);
+	/*chassis.moveToPoint(0, 400, 1500);
 	intake.move_velocity(127);
 	pros::delay(800);
 	intake.move_velocity(0);
@@ -314,7 +319,7 @@ void autonomous() {
 	intake.move_velocity(0);
 	pros::delay(50);
 	chassis.moveToPoint(0, 0, 1500);
-	pros::delay(50);
+	pros::delay(50);*/
 	//chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
 	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
 	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
