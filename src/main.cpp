@@ -269,6 +269,18 @@ void initialize() {
 	// Drivetrain motor brake mode
 	leftMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 	rightMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
+	pros::Task screenTask([]() {
+		while (true) {
+			auto p = chassis.getPose();
+			pros::lcd::print(3, "X: %f in", p.x);
+			pros::lcd::print(4, "Y: %f in", p.y);
+			pros::lcd::print(5, "H: %f deg", p.theta);
+
+			lemlib::telemetrySink() -> info("Chassis Pose: {}", p);
+
+			pros::delay(50);
+		}
+	});
 }
 
 /**
