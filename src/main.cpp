@@ -18,68 +18,65 @@
 #include <vector>
 
 #define VISION_PORT 14
-#define RED_SIG_ID  1     // SIG_1
-#define BLUE_SIG_ID 2 	  // SIG_2
-#define MIN_AREA    500
+#define RED_SIG_ID 1  // SIG_1
+#define BLUE_SIG_ID 2 // SIG_2
+#define MIN_AREA 500
 
 pros::vision_signature_s_t RED_SIG = pros::Vision::signature_from_utility(
-  RED_SIG_ID,
-  /* uMin */ 32717, /* uMax */ 32819, /* uMean */ 32768,
-  /* vMin */ -51,   /* vMax */ 51,    /* vMean */ 0,
-  /* range */ 2.5,  /* type */ 0
-);
+    RED_SIG_ID,
+    /* uMin */ 32717, /* uMax */ 32819, /* uMean */ 32768,
+    /* vMin */ -51, /* vMax */ 51, /* vMean */ 0,
+    /* range */ 2.5, /* type */ 0);
 
 pros::vision_signature_s_t BLUE_SIG = pros::Vision::signature_from_utility(
-  BLUE_SIG_ID,
-  /* uMin */ -51,   /* uMax */ 51,    /* uMean */ 0,
-  /* vMin */ 32717, /* vMax */ 32819, /* vMean */ 32768,
-  /* range */ 2.5,  /* type */ 0
-);
+    BLUE_SIG_ID,
+    /* uMin */ -51, /* uMax */ 51, /* uMean */ 0,
+    /* vMin */ 32717, /* vMax */ 32819, /* vMean */ 32768,
+    /* range */ 2.5, /* type */ 0);
 /**
  * A robot configration code
  */
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
-//Drivetrain MotorGroup
-pros::MotorGroup leftMotors({-1,-2});
-pros::MotorGroup rightMotors({19,20});
+// Drivetrain MotorGroup
+pros::MotorGroup leftMotors({-1, -2});
+pros::MotorGroup rightMotors({19, 20});
 
-lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
-                              &rightMotors, // right motor group
-                              26, // 26 inch track width
-                              lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
-                              500, // drivetrain rpm is 500
-                              2 // horizontal drift is 2. If we had traction wheels, it would have been 8
+lemlib::Drivetrain drivetrain(&leftMotors,		    // left motor group
+					&rightMotors,		    // right motor group
+					26,				    // 26 inch track width
+					lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
+					500,				    // drivetrain rpm is 500
+					2				    // horizontal drift is 2. If we had traction wheels, it would have been 8
 );
 
 lemlib::ControllerSettings linearController(
-//      0, 10, 10,   // kP, kI, kD
-    3, 0.5, 6,   // kP, kI, kD
-    0,          // anti-windup
-    0, 100,     // smallError,  smallErrorTimeout(ms)
-    3, 500,     // largeError,  largeErrorTimeout(ms)
-    100         // slew rate
+    //      0, 10, 10,   // kP, kI, kD
+    3, 0.5, 6, // kP, kI, kD
+    0,	   // anti-windup
+    0, 100,	   // smallError,  smallErrorTimeout(ms)
+    3, 500,	   // largeError,  largeErrorTimeout(ms)
+    100	   // slew rate
 );
 
 lemlib::ControllerSettings angularController(
-//     2, 0, 10,
+    //     2, 0, 10,
     0, 0, 0,
     0,
     0, 100,
     3, 500,
-    100
-);
+    100);
 
-//Intake MotorGroup
+// Intake MotorGroup
 pros::Motor intake_1(18);
 pros::Motor intake_2(17);
 
-pros::MotorGroup intake({18,-17});
+pros::MotorGroup intake({18, -17});
 
 pros::Motor outtake(3);
 
-pros::Vision vision_sensor (VISION_PORT);
+pros::Vision vision_sensor(VISION_PORT);
 pros::Gps gps(12);
 pros::Imu imu(13); // 비어있는 스마트포트 사용
 pros::Rotation vertical_rotation_sensor(15);
@@ -97,127 +94,138 @@ lemlib::TrackingWheel horizontal(
 );
 
 lemlib::OdomSensors sensors(
-    nullptr, 
     nullptr,
-    nullptr,  
     nullptr,
-    &imu
-);
+    nullptr,
+    nullptr,
+    &imu);
 
 lemlib::Chassis chassis(
     drivetrain,
     linearController,
     angularController,
-    sensors
-);
-struct GameObject{
+    sensors);
+struct GameObject
+{
 	int x;
-  	int y;
-  	GameObject(int x_ = 0, int y_ = 0) : x(x_), y(y_) {}
+	int y;
+	GameObject(int x_ = 0, int y_ = 0) : x(x_), y(y_) {}
 };
 
-struct Goal : public GameObject {
+struct Goal : public GameObject
+{
 	int id;
-  	Goal(int x_, int y_, int id_) : GameObject(x_, y_), id(id_) {} 
+	Goal(int x_, int y_, int id_) : GameObject(x_, y_), id(id_) {}
 };
 
-struct Loader : public GameObject {
+struct Loader : public GameObject
+{
 	int id;
 	Loader(int x_, int y_, int id_ = 0) : GameObject(x_, y_), id(id_) {}
 };
 
 std::vector<Goal> GOALS = {
-  	Goal(-620, 1200, 1),
-  	Goal(-620,-1200, 2),
-  	Goal( 620, 1200, 3),
-  	Goal( 620,-1200, 4),
-  	Goal(-205,  200, 5),
-  	Goal(-205, -200, 6),
-  	Goal( 205,  200, 7),
-  	Goal( 205, -200, 8),
+    Goal(-620, 1200, 1),
+    Goal(-620, -1200, 2),
+    Goal(620, 1200, 3),
+    Goal(620, -1200, 4),
+    Goal(-205, 200, 5),
+    Goal(-205, -200, 6),
+    Goal(205, 200, 7),
+    Goal(205, -200, 8),
 };
 
 std::vector<GameObject> GameObjects = {
-	GameObject( 0,  1200),
-	GameObject( 0, -1200),
-	GameObject(-600, 600),
-	GameObject(-600,-600),
-	GameObject( 600,-600),
-	GameObject( 600, 600),
-	GameObject(-1700,  0),
-	GameObject( 1700,  0)
-};
+    GameObject(0, 1200),
+    GameObject(0, -1200),
+    GameObject(-600, 600),
+    GameObject(-600, -600),
+    GameObject(600, -600),
+    GameObject(600, 600),
+    GameObject(-1700, 0),
+    GameObject(1700, 0)};
 
 std::vector<Loader> LOADERS = {
-	Loader(-1725,  1200, 1),
-	Loader(-1725, -1200, 2),
-	Loader( 1725,  1200, 3),
-	Loader( 1725, -1200, 4),
+    Loader(-1725, 1200, 1),
+    Loader(-1725, -1200, 2),
+    Loader(1725, 1200, 3),
+    Loader(1725, -1200, 4),
 };
 
-void move_forward(double inches, int speed = 100) {
-    const double wheel_diameter = 4.0;
-    const double PI = 3.1415926535;
-    double wheel_circumference = wheel_diameter * PI;
-    double rotations = inches / wheel_circumference;
-    double degrees = rotations * 360.0;
+void move_forward(double inches, int speed = 100)
+{
+	const double wheel_diameter = 4.0;
+	const double PI = 3.1415926535;
+	double wheel_circumference = wheel_diameter * PI;
+	double rotations = inches / wheel_circumference;
+	double degrees = rotations * 360.0;
 
-    leftMotors.tare_position();
-    rightMotors.tare_position();
+	leftMotors.tare_position();
+	rightMotors.tare_position();
 
-    leftMotors.move_relative(degrees, speed);
-    rightMotors.move_relative(degrees, speed);
+	leftMotors.move_relative(degrees, speed);
+	rightMotors.move_relative(degrees, speed);
 
-    pros::delay(1000);
+	pros::delay(1000);
 }
 
-void turn_right(double degrees, int speed = 100) {
-    double turn_ratio = 6.5; // Track width proportional value (in inches)
-    double distance = (turn_ratio * 3.1415 * degrees) / 360.0;
+void turn_right(double degrees, int speed = 100)
+{
+	double turn_ratio = 6.5; // Track width proportional value (in inches)
+	double distance = (turn_ratio * 3.1415 * degrees) / 360.0;
 
-    leftMotors.move_relative(distance * 360 / (4.0 * 3.1415), speed);
-    rightMotors.move_relative(-distance * 360 / (4.0 * 3.1415), speed);
+	leftMotors.move_relative(distance * 360 / (4.0 * 3.1415), speed);
+	rightMotors.move_relative(-distance * 360 / (4.0 * 3.1415), speed);
 
-    pros::delay(800);
+	pros::delay(800);
 }
 
-void RotateMotor() {
+void RotateMotor()
+{
 	intake.move(127);
 
-	//모터가 다 돌아갈 때 까지 기다리기
-	while (!((intake.get_position() >= 358) && (intake.get_position() <= 362))) {
+	// 모터가 다 돌아갈 때 까지 기다리기
+	while (!((intake.get_position() >= 358) && (intake.get_position() <= 362)))
+	{
 		pros::delay(10);
 	}
-	
+
 	intake.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	intake.brake();
 }
 
-static inline const char* detect_color_once() {
-  	// 0 = 가장 큰 객체
+static inline const char *detect_color_once()
+{
+	// 0 = 가장 큰 객체
 	pros::vision_object_s_t r = vision_sensor.get_by_sig(0, RED_SIG_ID);
 	pros::vision_object_s_t b = vision_sensor.get_by_sig(0, BLUE_SIG_ID);
 
 	int r_area = (r.signature == RED_SIG_ID) ? r.width * r.height : 0;
 	int b_area = (b.signature == BLUE_SIG_ID) ? b.width * b.height : 0;
 
-	if (r_area < MIN_AREA) r_area = 0;
-	if (b_area < MIN_AREA) b_area = 0;
+	if (r_area < MIN_AREA)
+		r_area = 0;
+	if (b_area < MIN_AREA)
+		b_area = 0;
 
-	if (r_area == 0 && b_area == 0) return "NONE";
-  	return (r_area > b_area) ? "RED" : "BLUE";
+	if (r_area == 0 && b_area == 0)
+		return "NONE";
+	return (r_area > b_area) ? "RED" : "BLUE";
 }
 // chassis: 전역 혹은 전달받은 LemLib 섀시 객체라고 가정
-void move_forward_inches(double inches, int timeout_ms = 2000) {
-    auto p = chassis.getPose();              // x,y[inch], theta[deg]
-    double rad = p.theta * M_PI / 180.0;     // deg → rad
-    double tx = p.x + inches * std::cos(rad);
-    double ty = p.y + inches * std::sin(rad);
-    chassis.moveToPoint(tx, ty, timeout_ms); // 그 지점까지 직진
+void move_forward_inches(double inches, int timeout_ms = 2000)
+{
+	auto p = chassis.getPose();		 // x,y[inch], theta[deg]
+	double rad = p.theta * M_PI / 180.0; // deg → rad
+	double tx = p.x + inches * std::cos(rad);
+	double ty = p.y + inches * std::sin(rad);
+	chassis.moveToPoint(tx, ty, timeout_ms); // 그 지점까지 직진
 }
 
-void gps_fusion_task() {
-	while (true) {
+void gps_fusion_task()
+{
+	while (true)
+	{
 		// 구버전 PROS API
 		double x_in = gps.get_position_x() * 39.37;
 		double y_in = gps.get_position_y() * 39.37;
@@ -230,56 +238,58 @@ void gps_fusion_task() {
 	}
 }
 
-
 /**
  * A callback function for LLEMU's center button.
  *
  * When this callback is fired, it will toggle line 2 of the LCD text between
  * "I was pressed!" and nothing.
  */
-void on_center_button() {
+void on_center_button()
+{
 	static bool pressed = false;
 	pressed = !pressed;
-	if (pressed) {
+	if (pressed)
+	{
 		pros::lcd::set_text(2, "I was pressed!");
-	} else {
+	}
+	else
+	{
 		pros::lcd::clear_line(2);
 	}
 }
-
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-void initialize() {
+void initialize()
+{
 	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
-	GameObject object(0,0);
-	pros::lcd::register_btn1_cb(on_center_button);
+	//pros::lcd::set_text(1, "Hello PROS User!");
+	GameObject object(0, 0);
+	// pros::lcd::register_btn1_cb(on_center_button);
 	imu.reset();
 	chassis.calibrate();
 	chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
-	//Vision Sensor Initialize
-  	vision_sensor.set_signature(RED_SIG_ID,  &RED_SIG);
-  	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
-	//pros::Task gpsTask(gps_fusion_task);
+					  // Vision Sensor Initialize
+	vision_sensor.set_signature(RED_SIG_ID, &RED_SIG);
+	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
+	// pros::Task gpsTask(gps_fusion_task);
 
 	// Drivetrain motor brake mode
 	leftMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 	rightMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
-	pros::Task screenTask([]() {
-		while (true) {
-			auto p = chassis.getPose();
-			pros::lcd::print(3, "X: %f in", p.x);
-			pros::lcd::print(4, "Y: %f in", p.y);
-			pros::lcd::print(5, "H: %f deg", p.theta);
 
-			lemlib::telemetrySink() -> info("Chassis Pose: {}", p);
-
+	pros::Task screenTask([&]() -> void {
+		while (true)
+		{
+			pros::lcd::print(0, "X: %.2f in", chassis.getPose().x);
+			pros::lcd::print(1, "Y: %.2f in", chassis.getPose().y);
+			pros::lcd::print(2, "H: %.2f deg", chassis.getPose().theta);
+			lemlib::telemetrySink() -> info("X: %.2f in", chassis.getPose().x);
 			pros::delay(50);
-		}
+		} 
 	});
 }
 
@@ -312,13 +322,17 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {
-	//chassis.turnToHeading(60, 1500);
+void autonomous()
+{
+	chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
+	// chassis.turnToHeading(60, 1500);
 	pros::delay(50);
-	chassis.moveToPoint(0, 1000, 1200);
-	//chassis.moveToPose(800, 0, 0, 500);
-	//move_forward(14,100);
-	//chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
+	chassis.moveToPoint(0, 150, 1200);
+	pros::delay(1000);
+	chassis.moveToPoint(100, 100, 1200);
+	// chassis.moveToPose(800, 0, 0, 500);
+	// move_forward(14,100);
+	// chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
 	/*chassis.moveToPoint(0, 400, 1500);
 	intake.move_velocity(127);
 	pros::delay(800);
@@ -332,20 +346,20 @@ void autonomous() {
 	pros::delay(50);
 	chassis.moveToPoint(0, 0, 1500);
 	pros::delay(50);*/
-	//chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
-	//std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
-	//pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
-	// chassis.setPose(0, 0, 0);
-	// chassis.turnToHeading(60,500);
-	// chassis.moveToPose(600, -600, 45, 3000);
-	// intake_1.move_velocity(127);
-	// pros::delay(1000);
-	// chassis.turnToHeading(10,1000);
-	// // move_forward_inches(10.0 / 2.54);
-	// chassis.moveToPose(205, -200, 45, 3000);
-	// intake_1.move_velocity(127);
-	// pros::delay(1000);
-	// intake_1.move_velocity(0);
+	// chassis.moveToPose(mm2in(600), mm2in(-600), 45, 5000);
+	// std::cout << "--------GPS-------" << "\n"<< "X: " << gps.get_position_x() << "\n" <<"Y: " << gps.get_position_y() << "\n";
+	// pros::lcd::print(2,"X: %f \nY: %f", gps.get_position_x(), gps.get_position_y());
+	//  chassis.setPose(0, 0, 0);
+	//  chassis.turnToHeading(60,500);
+	//  chassis.moveToPose(600, -600, 45, 3000);
+	//  intake_1.move_velocity(127);
+	//  pros::delay(1000);
+	//  chassis.turnToHeading(10,1000);
+	//  // move_forward_inches(10.0 / 2.54);
+	//  chassis.moveToPose(205, -200, 45, 3000);
+	//  intake_1.move_velocity(127);
+	//  pros::delay(1000);
+	//  intake_1.move_velocity(0);
 
 	// chassis.turnToHeading(30,2000);
 	// move_forward_inches(10.0 / 2.54);
@@ -363,7 +377,7 @@ void autonomous() {
 	// move_forward_inches(-10.0 / 2.54);
 	// //로더에서 공 가져오는 함수 구현 필요
 	// move_forward_inches(10.0 / 2.54);
-	//빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
+	// 빨아들인 공 위쪽의 관에 넣는 함수 구현 필요
 }
 
 /**
@@ -379,64 +393,71 @@ void autonomous() {
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-void opcontrol() {
+void opcontrol()
+{
 	// pros::Controller master(pros::E_CONTROLLER_MASTER);
 	// pros::MotorGroup left_mg({-1, -2});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	// pros::MotorGroup right_mg({-19, -20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 
-
-	while (true) {
+	while (true)
+	{
+		/*
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
-
+				     (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
+				     (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0); // Prints status of the emulated screen LCDs
+				     */
 		// Arcade control scheme
-		int dir = controller.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
-		int turn = controller.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
-		bool in  = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+		int dir = controller.get_analog(ANALOG_LEFT_Y);	  // Gets amount forward/backward from left joystick
+		int turn = controller.get_analog(ANALOG_RIGHT_X); // Gets the turn left/right from right joystick
+		bool in = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
 		bool out = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
-		bool Y   = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
-		bool A   = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
-		leftMotors.move(dir + turn);                      // Sets left motor voltage
-		rightMotors.move(dir - turn);                     // Sets right motor voltage
-		if (in && !out) {
+		bool Y = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+		bool A = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+		leftMotors.move(dir + turn);	// Sets left motor voltage
+		rightMotors.move(dir - turn); // Sets right motor voltage
+		if (in && !out)
+		{
 			// 전압 제어: 즉각 세게 도는지 확인하기 좋음
-			intake.move(127);           // [-127..127] 전압
+			intake.move(127); // [-127..127] 전압
 			outtake.move(127);
-			//outtake.move_voltage(12000);
-			// 또는 속도 제어: 기어셋에 맞춰 rpm 값 사용
-			// intake.move_velocity(300); // 300rpm (기어셋이 600rpm이면 절반 속도)
-		} else if (out && !in) {
+			// outtake.move_voltage(12000);
+			//  또는 속도 제어: 기어셋에 맞춰 rpm 값 사용
+			//  intake.move_velocity(300); // 300rpm (기어셋이 600rpm이면 절반 속도)
+		}
+		else if (out && !in)
+		{
 			intake.move(-127);
 			outtake.move(-127);
-			//outtake.move_voltage(-12000);
-			// intake.move_velocity(-300);
+			// outtake.move_voltage(-12000);
+			//  intake.move_velocity(-300);
 		}
-		else {
+		else
+		{
 			intake.brake(); // 또는 intake.move(0);
-			//intake_2.brake();
-			//intake_1.brake();
+			// intake_2.brake();
+			// intake_1.brake();
 			outtake.brake();
 		}
 
-		if (Y) {
-		// 필요: 아래 B안 참고해서 모터 중복 제어 피하기
+		if (Y)
+		{
+			// 필요: 아래 B안 참고해서 모터 중복 제어 피하기
 			intake_2.move_voltage(12000);
 		}
 		else if (A)
 		{
 			intake_2.move_voltage(-12000);
 		}
-		 
-		else {
+
+		else
+		{
 			// intake_2.move(0);
 		}
 
+		// const char* c = detect_color_once();
+		// pros::lcd::print(0, "Detect: %s", c);
+		// pros::delay(100);
 
-		//const char* c = detect_color_once();
-		//pros::lcd::print(0, "Detect: %s", c);
-		//pros::delay(100);
-
-		pros::delay(20);// Run for 20 ms then update
+		pros::delay(20); // Run for 20 ms then update
 	}
 }
