@@ -19,13 +19,15 @@
 #include "liblvgl/display/lv_display.h"
 #include "liblvgl/misc/lv_area.h"
 #include "liblvgl/widgets/image/lv_image.h"
+#include "liblvgl/lv_api_map_v8.h"
 
 #include <vector>
 
-#define VISION_PORT 14
 #define RED_SIG_ID 1  // SIG_1
 #define BLUE_SIG_ID 2 // SIG_2
 #define MIN_AREA 500
+
+LV_IMAGE_DECLARE(logo);
 
 // Declare & define functions to set the background color
 inline void black_background() { lv_obj_set_style_bg_color( lv_screen_active(), lv_color_hex(0x000000), 0); }
@@ -41,6 +43,17 @@ void display_img_from_c_array() {
 
     // set the source data for the image 
     lv_image_set_src(img,&logo);
+
+    // (Optional) set the image's alignment
+    lv_obj_align(img,LV_ALIGN_CENTER,0,0); // centered in the screen
+}
+
+void display_img_from_file(const void * src) {
+    // declare and define the image object
+    lv_obj_t* img = lv_image_create(lv_screen_active());
+
+    // set the source data for the image 
+    lv_image_set_src(img,src);
 
     // (Optional) set the image's alignment
     lv_obj_align(img,LV_ALIGN_CENTER,0,0); // centered in the screen
@@ -86,7 +99,7 @@ lemlib::ControllerSettings linearController(
 
 lemlib::ControllerSettings angularController(
     //     2, 0, 10,
-    0, 0, 0,
+    2.5, 0.5, 6,
     0,
     0, 100,
     3, 500,
@@ -100,7 +113,7 @@ pros::MotorGroup intake({18, -17});
 
 pros::Motor outtake(3);
 
-pros::Vision vision_sensor(VISION_PORT);
+pros::Vision vision_sensor(14);
 pros::Gps gps(12);
 pros::Imu imu(13); // 비어있는 스마트포트 사용
 pros::Rotation vertical_rotation_sensor(15);
@@ -289,9 +302,10 @@ void on_center_button()
  */
 void initialize()
 {
-	display_img_from_c_array();
-	black_background();
-	//pros::lcd::initialize();
+	lv_obj_t *img = lv_image_create(lv_scr_act(), NULL);
+    	lv_image_set_src(img, &logo);
+    	lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+	// pros::lcd::initialize();
 	//pros::lcd::set_text(3, "INIT COMPLETE TEST!");
 	//pros::lcd::set_text(1, "Hello PROS User!");
 	GameObject object(0, 0);
@@ -340,15 +354,15 @@ void competition_initialize() {}
  */
 void autonomous()
 {
-	pros::lcd::set_text(3, "INIT COMPLETE TEST!");
+	//pros::lcd::set_text(3, "INIT COMPLETE TEST!");
 	chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
 	// chassis.turnToHeading(60, 1500);
 	pros::delay(50);
-	chassis.moveToPoint(0, 150, 1200);
+	chassis.moveToPoint(200, 0, 1200);
 	pros::delay(1000);
-	chassis.turnToPoint(100, 100, 800);
+	//chassis.turnToPoint(100, 100, 800);
 	pros::delay(500);
-	chassis.moveToPoint(100, 100, 1200);
+	//chassis.moveToPoint(100, 100, 1200);
 	// chassis.moveToPose(800, 0, 0, 500);
 	// move_forward(14,100);
 	// chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
