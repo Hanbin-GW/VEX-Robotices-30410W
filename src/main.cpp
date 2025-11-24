@@ -15,12 +15,36 @@
 #include "lemlib/api.hpp"
 #include "lemlib/chassis/odom.hpp"
 #include "lemlib/chassis/chassis.hpp"
+
+#include "liblvgl/display/lv_display.h"
+#include "liblvgl/misc/lv_area.h"
+#include "liblvgl/widgets/image/lv_image.h"
+
 #include <vector>
 
 #define VISION_PORT 14
 #define RED_SIG_ID 1  // SIG_1
 #define BLUE_SIG_ID 2 // SIG_2
 #define MIN_AREA 500
+
+// Declare & define functions to set the background color
+inline void black_background() { lv_obj_set_style_bg_color( lv_screen_active(), lv_color_hex(0x000000), 0); }
+inline void blue_background() { lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x00008B), 0); }
+inline void red_background() { lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFF0000), 0); }
+
+void display_img_from_c_array() {
+    // create a variable for the c array (image)
+    LV_IMAGE_DECLARE(logo);
+
+    // declare and define the image object
+    lv_obj_t* img = lv_image_create(lv_screen_active());
+
+    // set the source data for the image 
+    lv_image_set_src(img,&logo);
+
+    // (Optional) set the image's alignment
+    lv_obj_align(img,LV_ALIGN_CENTER,0,0); // centered in the screen
+}
 
 pros::vision_signature_s_t RED_SIG = pros::Vision::signature_from_utility(
     RED_SIG_ID,
@@ -179,7 +203,6 @@ void turn_right(double degrees, int speed = 100)
 
 	pros::delay(800);
 }
-
 void RotateMotor()
 {
 	intake.move(127);
@@ -257,6 +280,7 @@ void on_center_button()
 		pros::lcd::clear_line(2);
 	}
 }
+
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -265,13 +289,15 @@ void on_center_button()
  */
 void initialize()
 {
-	pros::lcd::initialize();
+	display_img_from_c_array();
+	black_background();
+	//pros::lcd::initialize();
+	//pros::lcd::set_text(3, "INIT COMPLETE TEST!");
 	//pros::lcd::set_text(1, "Hello PROS User!");
 	GameObject object(0, 0);
 	// pros::lcd::register_btn1_cb(on_center_button);
 	imu.reset();
 	chassis.calibrate();
-	chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
 					  // Vision Sensor Initialize
 	vision_sensor.set_signature(RED_SIG_ID, &RED_SIG);
 	vision_sensor.set_signature(BLUE_SIG_ID, &BLUE_SIG);
@@ -281,16 +307,6 @@ void initialize()
 	leftMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 	rightMotors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 
-	pros::Task screenTask([&]() -> void {
-		while (true)
-		{
-			pros::lcd::print(0, "X: %.2f in", chassis.getPose().x);
-			pros::lcd::print(1, "Y: %.2f in", chassis.getPose().y);
-			pros::lcd::print(2, "H: %.2f deg", chassis.getPose().theta);
-			lemlib::telemetrySink() -> info("X: %.2f in", chassis.getPose().x);
-			pros::delay(50);
-		} 
-	});
 }
 
 /**
@@ -324,11 +340,14 @@ void competition_initialize() {}
  */
 void autonomous()
 {
+	pros::lcd::set_text(3, "INIT COMPLETE TEST!");
 	chassis.setPose(0, 0, 0); // Reset pose to (0,0,0)
 	// chassis.turnToHeading(60, 1500);
 	pros::delay(50);
 	chassis.moveToPoint(0, 150, 1200);
 	pros::delay(1000);
+	chassis.turnToPoint(100, 100, 800);
+	pros::delay(500);
 	chassis.moveToPoint(100, 100, 1200);
 	// chassis.moveToPose(800, 0, 0, 500);
 	// move_forward(14,100);
@@ -401,11 +420,12 @@ void opcontrol()
 
 	while (true)
 	{
-		/*
+		
+		
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 				     (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 				     (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0); // Prints status of the emulated screen LCDs
-				     */
+				     
 		// Arcade control scheme
 		int dir = controller.get_analog(ANALOG_LEFT_Y);	  // Gets amount forward/backward from left joystick
 		int turn = controller.get_analog(ANALOG_RIGHT_X); // Gets the turn left/right from right joystick
